@@ -1,15 +1,25 @@
 <footer>
     <div class="f-info">
-        <div class="f-info-socials">
-            <i class="fa-brands fa-square-instagram"></i>
-            <i class="fa-brands fa-square-facebook"></i>
-            <i class="fa-brands fa-square-linkedin"></i>
-
+        <div class="f-info-socials" aria-label="Social media links">
+            <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                <i class="fa-brands fa-instagram" aria-hidden="true"></i>
+            </a>
+            <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                <i class="fa-brands fa-facebook-f" aria-hidden="true"></i>
+            </a>
+            <a href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                <i class="fa-brands fa-linkedin-in" aria-hidden="true"></i>
+            </a>
         </div>
-        <div class="f-info-brand">&copy; Wanderlust Private Limited</div>
-        <div class="f-info-links">
+
+        <div class="f-info-brand">
+            <span>&copy; <%= new Date().getFullYear() %> Wanderlust Private Limited</span>
+            <span class="footer-tagline">Find your place. Make memories.</span>
+        </div>
+
+        <nav class="f-info-links" aria-label="Footer links">
             <a href="/privacy">Privacy</a>
             <a href="/terms">Terms</a>
-        </div>
+        </nav>
     </div>
 </footer>

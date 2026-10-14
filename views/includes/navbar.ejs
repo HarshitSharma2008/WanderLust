@@ -1,16 +1,315 @@
+
+<style>
+    .search-form {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 0;
+        margin: 0;
+    }
+
+    .search-inp {
+        width: clamp(150px, 20vw, 280px);
+        min-width: 0;
+        border-radius: 25px;
+        padding: 0.5rem 1rem;
+        font-size: 0.95rem;
+    }
+
+    .search-btn {
+        color: #fff;
+        background-color: #fe424d;
+        border: 1px solid #fe424d;
+        border-radius: 25px;
+        padding: 0.5rem 1rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+        transition: background-color 0.2s ease;
+    }
+
+    .search-btn:hover,
+    .search-btn:focus {
+        color: #fff;
+        background-color: #e93642;
+        border-color: #e93642;
+    }
+
+    .search-btn i {
+        margin-right: 0.4rem;
+    }
+
+    .navbar {
+        padding: 0.65rem 0;
+    }
+
+    .navbar > .container-fluid {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 0.75rem;
+    }
+
+    .navbar-brand {
+        flex-shrink: 0;
+        margin-right: 0.5rem;
+    }
+
+    #navbarNavAltMarkup {
+        min-width: 0;
+        flex: 1;
+    }
+
+    .navbar-main-links {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-shrink: 0;
+    }
+
+    .navbar-main-links .nav-link {
+        white-space: nowrap;
+    }
+
+    .navbar-search-wrap {
+        min-width: 0;
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        padding: 0 0.75rem;
+    }
+
+    .navbar-search-wrap .search-form {
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .navbar-search-wrap .search-inp {
+        flex: 1;
+    }
+
+    .navbar-account-links {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        flex-shrink: 0;
+    }
+
+    .navbar-account-links .nav-link {
+        white-space: nowrap;
+    }
+
+    .navbar-toggler {
+        flex-shrink: 0;
+        padding: 0.35rem 0.55rem;
+    }
+
+    /* Medium screens and tablets */
+    @media (max-width: 1100px) and (min-width: 768px) {
+        .navbar > .container-fluid {
+            gap: 0.4rem;
+        }
+
+        .navbar-main-links {
+            gap: 0.25rem;
+        }
+
+        .navbar-search-wrap {
+            padding: 0 0.3rem;
+        }
+
+        .navbar-search-wrap .search-form {
+            gap: 0.35rem;
+        }
+
+        .navbar-search-wrap .search-inp {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        .search-btn {
+            padding: 0.5rem 0.7rem;
+            font-size: 0.85rem;
+        }
+
+        .navbar-account-links {
+            gap: 0.2rem;
+        }
+
+        .navbar .nav-link {
+            font-size: 0.88rem;
+        }
+    }
+
+    /* Mobile menu */
+    @media (max-width: 767.98px) {
+        .navbar > .container-fluid {
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+
+        .navbar-brand {
+            margin-right: auto;
+        }
+
+        #navbarNavAltMarkup {
+            flex-basis: 100%;
+            width: 100%;
+        }
+
+        #navbarNavAltMarkup:not(.show) {
+            display: none;
+        }
+
+        #navbarNavAltMarkup.show {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.5rem;
+            padding: 0.75rem 0 0.25rem;
+        }
+
+        .navbar-main-links,
+        .navbar-account-links {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0;
+            width: 100%;
+        }
+
+        .navbar-main-links .nav-link,
+        .navbar-account-links .nav-link {
+            white-space: normal;
+            padding: 0.65rem 0.5rem;
+        }
+
+        .navbar-search-wrap {
+            width: 100%;
+            flex: none;
+            padding: 0.5rem 0;
+        }
+
+        .navbar-search-wrap .search-form {
+            width: 100%;
+            max-width: none;
+        }
+
+        .navbar-search-wrap .search-inp {
+            width: 100%;
+            flex: 1;
+            padding: 0.6rem 1rem;
+        }
+
+        .search-btn {
+            padding: 0.6rem 1rem;
+        }
+
+        .navbar-account-links {
+            border-top: 1px solid #eee;
+            padding-top: 0.4rem;
+        }
+    }
+
+    /* Extra-small mobile screens */
+    @media (max-width: 360px) {
+        .navbar-search-wrap .search-form {
+            gap: 0.3rem;
+        }
+
+        .navbar-search-wrap .search-inp {
+            font-size: 0.85rem;
+            padding: 0.55rem 0.65rem;
+        }
+
+        .search-btn {
+            padding: 0.55rem 0.65rem;
+            font-size: 0.85rem;
+        }
+
+        .search-btn i {
+            margin-right: 0.2rem;
+        }
+    }
+</style>
+
 <nav class="navbar navbar-expand-md bg-body-light border-bottom sticky-top">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/"><i class="fa-regular fa-compass"></i></a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup"
+
+        <!-- Brand -->
+        <a class="navbar-brand" href="/listings" aria-label="Wanderlust home">
+            <i class="fa-regular fa-compass"></i>
+        </a>
+
+        <!-- Mobile toggle -->
+        <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNavAltMarkup"
+            aria-controls="navbarNavAltMarkup"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
         >
             <span class="navbar-toggler-icon"></span>
         </button>
+
         <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-            <div class="navbar-nav">
-                <a class="nav-link "  href="/">Home</a>
-                <a class="nav-link" href="/listings">ALL Listings</a>
-                <a class="nav-link" href="/listings/new">Add new Listing</a>
+
+            <!-- Main navigation -->
+            <div class="navbar-nav navbar-main-links">
+                <a class="nav-link" href="/listings">Explore</a>
             </div>
+
+            <!-- Existing search bar -->
+            <div class="navbar-search-wrap">
+                <form
+                    class="search-form"
+                    role="search"
+                    action="/listings/search"
+                    method="GET"
+                >
+                    <input
+                        class="form-control search-inp"
+                        type="search"
+                        name="q"
+                        placeholder="Search destinations"
+                        aria-label="Search destinations"
+                        value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
+                        required
+                    >
+
+                    <button class="btn search-btn" type="submit">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        Search
+                    </button>
+                </form>
+            </div>
+
+            <!-- Account and listing links -->
+            <div class="navbar-nav navbar-account-links">
+                <% if (currUser) { %>
+                    <a class="nav-link" href="/listings/new">
+                        Wanderlust your home
+                    </a>
+
+                    <a class="nav-link" href="/logout">
+                        <b>Log out</b>
+                    </a>
+                <% } else { %>
+                    <a class="nav-link" href="/listings/new">
+                        Wanderlust your home
+                    </a>
+
+                    <a class="nav-link" href="/signup">
+                        <b>Sign up</b>
+                    </a>
+
+                    <a class="nav-link" href="/login">
+                        <b>Login</b>
+                    </a>
+                <% } %>
+            </div>
+
         </div>
     </div>
 </nav>

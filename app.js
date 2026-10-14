@@ -1,3 +1,7 @@
+if(process.env.NODE_ENV !== "production"){
+    require("dotenv").config();
+
+}
 
 const express = require("express");
 const app = express();
@@ -8,10 +12,13 @@ const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const ExpressError = require("./utils/ExpressError.js");
 
-const listings = require("./routes/listing.js");
-const reviews = require("./routes/review.js");
+const listingRouter = require("./routes/listing.js");
+const reviewRouter= require("./routes/review.js");
+const userRouter = require("./routes/user.js");
+
 
 const session = require("express-session");
+const MongoStore = require("connect-mongo").default;
 const flash = require("connect-flash");
 
 const passport=require("passport");
@@ -20,6 +27,13 @@ const User=require("./models/user.js");
 
 
 // ================= DATABASE CONNECTION =================
+
+
+const dbUrl = process.env.ATLASDB_URL;
+
+async function main() {
+    await mongoose.connect(dbUrl);
+}
 
 main()
     .then(() => {
@@ -30,9 +44,6 @@ main()
         console.log(err);
     });
 
-async function main() {
-    await mongoose.connect("mongodb://127.0.0.1:27017/wanderlust");
-}
 
 
 // ================= APP CONFIGURATION =================
@@ -54,8 +65,22 @@ app.use(express.static(path.join(__dirname, "/public")));
 
 // ================= SESSION =================
 
+
+const store=MongoStore.create({
+    mongoUrl:dbUrl,
+    crypto:{
+        secret:process.env.SECRET,
+    },
+    touchAfter:24*3600,
+});
+
+store.on("error",()=>{
+    console.log("ERROR in Mongo Session Store",err);
+});
+
 const sessionOptions = {
-    secret: "mysupersecretcode",
+    store,
+    secret: process.env.SECRET,
     resave: false,
     saveUninitialized: true,
 
@@ -65,6 +90,8 @@ const sessionOptions = {
         httpOnly: true
     }
 };
+
+
 
 
 
@@ -89,26 +116,22 @@ app.use((req, res, next) => {
 
     res.locals.success = req.flash("success");
     res.locals.error = req.flash("error");
+    res.locals.currUser=req.user;
 
     next();
 });
 
 
-// ================= ROOT ROUTE =================
-
-app.get("/", (req, res) => {
-    res.send("Hi i am root");
-});
-
 
 // ================= LISTING ROUTES =================
 
-app.use("/listings", listings);
+app.use("/listings", listingRouter);
 
 
 // ================= REVIEW ROUTES =================
 
-app.use("/listings/:id/reviews", reviews);
+app.use("/listings/:id/reviews", reviewRouter);
+app.use("/",userRouter);
 
 
 // ================= 404 ERROR =================

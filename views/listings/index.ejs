@@ -1,40 +1,544 @@
-<% layout("/layouts/boilerplate")%>
 
-    <body>
-        <h3>All Listings</h3>
-        <form action="/listings/new" method="get">
-            <!-- <button>Create new Listings:)</button> -->
-        </form>
-        <div class="row row-cols-lg-3 row-cols-md-2 row-cols-sm-1 g-4">
+<% layout("/layouts/boilerplate") %>
 
-    <% for(let listing of alllistings) { %>
+<style>
+    /* Category bar */
+    #filters {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        width: 100%;
+        margin-top: 1rem;
+        min-width: 0;
+    }
 
-        <div class="col">
-            <a href="/listings/<%= listing._id %>" class="listing-link">
+    /* Scrollable category area */
+    .category-carousel {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        min-width: 0;
+        gap: 0.5rem;
+    }
 
-                <div class="card col listing-card">
-                    <img 
-                        src="<%= listing.image.url %>" 
-                        class="card-img-top" 
-                        alt="<%= listing.title %>"
-                        style="height: 20rem;"
-                    >
-<!-- clas use to make whole image anchor tag -->
-                    <div class="card-img-overlay">
-                        
-                    </div>
+    .filter-track {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 2rem;
+        flex: 1;
+        min-width: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-behavior: smooth;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding: 0.25rem 0 0.5rem;
+    }
 
-                    <div class="card-body">
-                        <p class="card-text">
-                            <b><%= listing.title %></b>
-                            <br>
-                            &#8377; <%= listing.price.toLocaleString("en-IN") %> /night
-                        </p>
-                    </div>
+    .filter-track::-webkit-scrollbar {
+        display: none;
+    }
+
+    .filter {
+        text-align: center;
+        margin-top: 1rem;
+        opacity: 0.7;
+        transition: opacity 0.3s ease, color 0.3s ease;
+        cursor: pointer;
+        flex: 0 0 auto;
+    }
+
+    .filter:hover,
+    .filter.active {
+        opacity: 1;
+        color: #fe424d;
+    }
+
+    .filter a {
+        color: inherit;
+        text-decoration: none;
+        display: block;
+    }
+
+    .filter i {
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .filter p {
+        margin: 0;
+        font-size: 0.8rem;
+        white-space: nowrap;
+    }
+
+    .filter.active {
+        border-bottom: 2px solid #fe424d;
+        padding-bottom: 0.5rem;
+    }
+
+    /* Category arrow buttons */
+    .filter-arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 34px;
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        border: 1px solid #ddd;
+        border-radius: 50%;
+        background: #fff;
+        color: #222;
+        cursor: pointer;
+        transition: background-color 0.2s ease,
+                    color 0.2s ease,
+                    opacity 0.2s ease;
+        z-index: 1;
+    }
+
+    .filter-arrow:hover:not(:disabled) {
+        background: #222;
+        color: #fff;
+    }
+
+    .filter-arrow:disabled {
+        opacity: 0.3;
+        cursor: default;
+    }
+
+    .filter-arrow:focus-visible {
+        outline: 2px solid #fe424d;
+        outline-offset: 2px;
+    }
+
+    /* Tax toggle */
+    .tax-toggle {
+        border: 1px solid #222;
+        border-radius: 1rem;
+        min-height: 3.25rem;
+        padding: 0.7rem 1rem;
+        margin-top: 1rem;
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-sizing: border-box;
+        color: #111;
+        background-color: #fff;
+    }
+
+    .tax-toggle .form-check-reverse {
+        display: flex;
+        flex-direction: row-reverse;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .tax-toggle .form-check-input {
+        float: none !important;
+        margin: 0 !important;
+        flex-shrink: 0;
+        cursor: pointer;
+        border: 1px solid #333;
+    }
+
+    .tax-toggle .form-check-input:not(:checked) {
+        background-color: #ccc;
+        border-color: #333;
+    }
+
+    .tax-toggle .form-check-input:checked {
+        background-color: #198754;
+        border-color: #146c43;
+    }
+
+    .tax-toggle .form-check-label {
+        margin: 0 !important;
+        padding: 0;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #111;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    .tax-info {
+        display: none;
+    }
+
+    /* Listing cards */
+    .listing-card {
+        width: 100%;
+        height: 100%;
+        border: none;
+        border-radius: 1rem;
+        overflow: hidden;
+        transition: transform 0.2s ease;
+    }
+
+    .listing-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .listing-card img {
+        display: block;
+        width: 100%;
+        height: 20rem;
+        object-fit: cover;
+    }
+
+    .listing-card .card-body {
+        padding: 0.75rem 0;
+    }
+
+    .listing-card .card-text {
+        margin-bottom: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .listing-link {
+        display: block;
+        height: 100%;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .listing-link:hover {
+        color: inherit;
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 3rem 1rem;
+        width: 100%;
+    }
+
+    .no-results i {
+        font-size: 3rem;
+        color: #999;
+        margin-bottom: 1rem;
+    }
+
+    /* Tablet and smaller laptops */
+    @media (max-width: 992px) {
+        #filters {
+            gap: 0.75rem;
+        }
+
+        .filter-track {
+            gap: 1.25rem;
+        }
+
+        .tax-toggle {
+            margin-left: 0;
+        }
+
+        .listing-card img {
+            height: 18rem;
+        }
+    }
+
+    /* Mobile */
+    @media (max-width: 576px) {
+        #filters {
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .category-carousel {
+            flex: 1 1 100%;
+            width: 100%;
+            gap: 0.35rem;
+        }
+
+        .filter-track {
+            gap: 1.25rem;
+            padding: 0.25rem 0 0.5rem;
+        }
+
+        .filter {
+            margin-top: 0.5rem;
+        }
+
+        .filter i {
+            font-size: 1.1rem;
+        }
+
+        .filter p {
+            font-size: 0.75rem;
+        }
+
+        .filter-arrow {
+            flex-basis: 30px;
+            width: 30px;
+            height: 30px;
+        }
+
+        .tax-toggle {
+            width: 100%;
+            margin: 0.5rem 0 0;
+            min-height: 3rem;
+        }
+
+        .tax-toggle .form-check-label {
+            font-size: 0.8rem;
+        }
+
+        /* One listing per row on mobile */
+        .listing-card img {
+            height: 16rem;
+        }
+    }
+
+    /* Very small screens */
+    @media (max-width: 360px) {
+        .category-carousel {
+            gap: 0.2rem;
+        }
+
+        .filter-track {
+            gap: 1rem;
+        }
+
+        .filter-arrow {
+            flex-basis: 26px;
+            width: 26px;
+            height: 26px;
+            font-size: 0.75rem;
+        }
+
+        .listing-card img {
+            height: 14rem;
+        }
+    }
+
+    /* Respect reduced-motion preference */
+    @media (prefers-reduced-motion: reduce) {
+        .filter-track {
+            scroll-behavior: auto;
+        }
+
+        .filter,
+        .filter-arrow,
+        .listing-card {
+            transition: none;
+        }
+    }
+</style>
+
+<%
+    const categories = [
+        { name: "Trending", icon: "fa-solid fa-fire" },
+        { name: "Rooms", icon: "fa-solid fa-bed" },
+        { name: "Iconic Cities", icon: "fa-solid fa-mountain-city" },
+        { name: "Mountains", icon: "fa-solid fa-mountain" },
+        { name: "Castles", icon: "fa-brands fa-fort-awesome" },
+        { name: "Amazing Pools", icon: "fa-solid fa-person-swimming" },
+        { name: "Camping", icon: "fa-solid fa-campground" },
+        { name: "Farms", icon: "fa-solid fa-building-wheat" },
+        { name: "Arctic", icon: "fa-solid fa-snowman" },
+        { name: "Domes", icon: "fa-solid fa-igloo" }
+    ];
+%>
+
+<!-- Responsive category carousel -->
+<div id="filters">
+    <div class="category-carousel">
+
+        <!-- Scroll left -->
+        <button
+            type="button"
+            class="filter-arrow"
+            id="filterLeft"
+            aria-label="Scroll categories left"
+            title="Previous categories"
+        >
+            <i class="fa-solid fa-chevron-left"></i>
+        </button>
+
+        <!-- Category icons -->
+        <div
+            class="filter-track"
+            id="filterTrack"
+            aria-label="Listing categories"
+        >
+            <% categories.forEach(category => { %>
+                <div class="filter <%= typeof activeCategory !== 'undefined' && activeCategory === category.name ? 'active' : '' %>">
+                    <a href="/listings/category/<%= encodeURIComponent(category.name) %>">
+                        <div>
+                            <i class="<%= category.icon %>"></i>
+                        </div>
+                        <p><%= category.name %></p>
+                    </a>
                 </div>
+            <% }) %>
+        </div>
 
+        <!-- Scroll right -->
+        <button
+            type="button"
+            class="filter-arrow"
+            id="filterRight"
+            aria-label="Scroll categories right"
+            title="Next categories"
+        >
+            <i class="fa-solid fa-chevron-right"></i>
+        </button>
+    </div>
+
+    <!-- Tax toggle -->
+    <div class="tax-toggle">
+        <div class="form-check-reverse form-switch">
+            <input
+                type="checkbox"
+                class="form-check-input"
+                id="flexSwitchCheckDefault"
+                role="switch"
+            >
+            <label
+                for="flexSwitchCheckDefault"
+                class="form-check-label"
+            >
+                Display total after Taxes
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Search/category heading -->
+<% if (typeof searchQuery !== 'undefined' && searchQuery) { %>
+    <h5 class="mt-4">
+        Search results for: "<%= searchQuery %>"
+    </h5>
+<% } else if (typeof activeCategory !== 'undefined' && activeCategory) { %>
+    <h5 class="mt-4">
+        <%= activeCategory %> listings
+    </h5>
+<% } %>
+
+<!-- Responsive listings grid -->
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mt-3">
+
+    <% if (alllistings && alllistings.length > 0) { %>
+
+        <% for (let listing of alllistings) { %>
+            <div class="col">
+                <a
+                    href="/listings/<%= listing._id %>"
+                    class="listing-link"
+                >
+                    <div class="card listing-card">
+                        <img
+                            src="<%= listing.image && listing.image.url ? listing.image.url : 'https://placehold.co/600x400?text=No+Image' %>"
+                            class="card-img-top"
+                            alt="<%= listing.title %>"
+                            loading="lazy"
+                        >
+
+                        <div class="card-img-overlay"></div>
+
+                        <div class="card-body">
+                            <p class="card-text">
+                                <b><%= listing.title %></b>
+                                <br>
+                                &#8377;
+                                <%= Number(listing.price || 0).toLocaleString("en-IN") %>
+                                /night
+
+                                <i class="tax-info">
+                                    &nbsp;&nbsp;+18% GST
+                                </i>
+                            </p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        <% } %>
+
+    <% } else { %>
+
+        <div class="no-results">
+            <i class="fa-solid fa-house-circle-xmark"></i>
+            <h4>No listings found</h4>
+            <p class="text-muted">
+                Try another destination or explore other categories.
+            </p>
+            <a href="/listings" class="btn btn-outline-dark rounded-pill">
+                View all listings
             </a>
         </div>
 
     <% } %>
-    </body>
+
+</div>
+
+<script>
+    // Category carousel arrows
+    (() => {
+        const track = document.getElementById("filterTrack");
+        const leftButton = document.getElementById("filterLeft");
+        const rightButton = document.getElementById("filterRight");
+
+        if (!track || !leftButton || !rightButton) return;
+
+        function updateArrows() {
+            const maxScroll = track.scrollWidth - track.clientWidth;
+            const currentScroll = track.scrollLeft;
+
+            leftButton.disabled = currentScroll <= 1;
+            rightButton.disabled = currentScroll >= maxScroll - 1;
+
+            // Hide arrows when all categories fit
+            const hasOverflow = maxScroll > 1;
+
+            leftButton.style.visibility = hasOverflow ? "visible" : "hidden";
+            rightButton.style.visibility = hasOverflow ? "visible" : "hidden";
+        }
+
+        function scrollCategories(direction) {
+            const amount = Math.max(track.clientWidth * 0.7, 120);
+
+            track.scrollBy({
+                left: direction * amount,
+                behavior: window.matchMedia(
+                    "(prefers-reduced-motion: reduce)"
+                ).matches ? "auto" : "smooth"
+            });
+        }
+
+        leftButton.addEventListener("click", () => {
+            scrollCategories(-1);
+        });
+
+        rightButton.addEventListener("click", () => {
+            scrollCategories(1);
+        });
+
+        track.addEventListener("scroll", updateArrows, {
+            passive: true
+        });
+
+        window.addEventListener("resize", updateArrows);
+
+        // Initialize after layout is calculated
+        requestAnimationFrame(updateArrows);
+    })();
+
+    // Tax toggle functionality
+    const taxSwitch = document.getElementById("flexSwitchCheckDefault");
+    const taxInfos = document.getElementsByClassName("tax-info");
+
+    if (taxSwitch) {
+        taxSwitch.addEventListener("change", () => {
+            for (const info of taxInfos) {
+                info.style.display = taxSwitch.checked ? "inline" : "none";
+            }
+        });
+    }
+</script>
+

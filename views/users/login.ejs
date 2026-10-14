@@ -1,0 +1,144 @@
+
+<% layout("/layouts/boilerplate") %>
+
+<div class="login-page">
+    <div class="login-card">
+
+        <div class="login-heading">
+            <div class="login-icon">
+                <i class="fa-solid fa-compass"></i>
+            </div>
+
+            <h1>Welcome back!</h1>
+            <p>Log in to continue your Wanderlust journey.</p>
+        </div>
+
+        <form action="/login" method="POST" class="login-form needs-validation" novalidate>
+
+            <div class="login-field">
+                <label for="username" class="form-label">
+                    Username
+                </label>
+
+                <div class="login-input-wrap">
+                    <i class="fa-regular fa-user input-icon"></i>
+
+                    <input
+                        class="form-control login-input"
+                        type="text"
+                        name="username"
+                        id="username"
+                        placeholder="Enter your username"
+                        autocomplete="username"
+                        required
+                        minlength="3"
+                    >
+
+                    <div class="invalid-feedback">
+                        Please enter your username.
+                    </div>
+                </div>
+            </div>
+
+            <div class="login-field">
+                <label for="password" class="form-label">
+                    Password
+                </label>
+
+                <div class="login-input-wrap password-wrap">
+                    <i class="fa-solid fa-lock input-icon"></i>
+
+                    <input
+                        class="form-control login-input"
+                        type="password"
+                        name="password"
+                        id="password"
+                        placeholder="Enter your password"
+                        autocomplete="current-password"
+                        required
+                    >
+
+                    <button
+                        type="button"
+                        class="password-toggle"
+                        id="togglePassword"
+                        aria-label="Show password"
+                        aria-pressed="false"
+                    >
+                        <i class="fa-regular fa-eye" id="passwordEye"></i>
+                    </button>
+
+                    <div class="invalid-feedback">
+                        Please enter your password.
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="login-submit">
+                <span>Log In</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+
+            <p class="login-signup">
+                Don't have an account?
+                <a href="/signup">Sign up</a>
+            </p>
+
+        </form>
+
+        <div class="login-footer-note">
+            <i class="fa-solid fa-shield-halved"></i>
+            Your account is protected by secure authentication.
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // Show or hide password
+    (() => {
+        const passwordInput = document.getElementById("password");
+        const toggleButton = document.getElementById("togglePassword");
+        const eyeIcon = document.getElementById("passwordEye");
+
+        if (!passwordInput || !toggleButton || !eyeIcon) return;
+
+        toggleButton.addEventListener("click", () => {
+            const showPassword = passwordInput.type === "password";
+
+            passwordInput.type = showPassword ? "text" : "password";
+            toggleButton.setAttribute("aria-pressed", String(showPassword));
+            toggleButton.setAttribute(
+                "aria-label",
+                showPassword ? "Hide password" : "Show password"
+            );
+
+            eyeIcon.classList.toggle("fa-eye", !showPassword);
+            eyeIcon.classList.toggle("fa-eye-slash", showPassword);
+        });
+    })();
+
+    // Client-side form validation
+    (() => {
+        const forms = document.querySelectorAll(".login-form");
+
+        forms.forEach((form) => {
+            form.addEventListener("submit", (event) => {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+
+                form.classList.add("was-validated");
+            });
+
+            form.querySelectorAll("input").forEach((input) => {
+                input.addEventListener("input", () => {
+                    if (form.classList.contains("was-validated")) {
+                        input.classList.remove("is-invalid");
+                    }
+                });
+            });
+        });
+    })();
+</script>

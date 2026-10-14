@@ -1,96 +1,144 @@
-const express=require("express");
-const router=express.Router();
-const listing=require("../models/listing.js");
-const wrapAsync=require("../utils/wrapAsync.js");
-const ExpressError=require("../utils/ExpressError.js");
-const{listingSchema}=require("../schema.js");
 
+const express = require("express");
+const router = express.Router();
+const wrapAsync = require("../utils/wrapAsync.js");
 
-//validate functionS
-const validateListing = (req, res, next) => {
-    let { error } = listingSchema.validate(req.body);
+const {
+    isLoggedIn,
+    isOwner,
+    validateListing
+} = require("../middleware.js");
 
-    if (error) {
-        let errMsg = error.details.map((el) => el.message).join(",");
-        throw new ExpressError(404, errMsg);
-    } else {
-        next();
+const listingController = require("../controllers/listings.js");
+const Listing = require("../models/listing.js");
+
+const multer = require("multer");
+const { storage } = require("../cloudConfig.js");
+
+const upload = multer({ storage });
+
+// Search helper: treat user input as plain text
+function escapeRegex(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Main listing page
+router.route("/")
+    .get(wrapAsync(listingController.index))
+    .post(
+        isLoggedIn,
+        upload.single("listing[image][url]"),
+        validateListing,
+        wrapAsync(listingController.createListing)
+    );
+
+// NEW: Search listings
+router.get("/search", wrapAsync(async (req, res) => {
+    const q = (req.query.q || "").trim();
+
+    if (!q) {
+        return res.redirect("/listings");
     }
+
+    const searchRegex = new RegExp(escapeRegex(q), "i");
+
+    const alllistings = await Listing.find({
+        $or: [
+            { title: searchRegex },
+            { location: searchRegex },
+            { country: searchRegex },
+            { description: searchRegex },
+            { category: searchRegex }
+        ]
+    });
+
+    res.render("listings/index.ejs", {
+        alllistings,
+        searchQuery: q,
+        activeCategory: null
+    });
+}));
+
+// NEW: Category filter keywords
+const categoryKeywords = {
+    "Trending": null,
+    "Rooms": /\b(room|rooms|bedroom|bedrooms|shared room|private room|hostel)\b/i,
+    "Iconic Cities": /\b(city|cities|urban|downtown|city centre|city center)\b/i,
+    "Mountains": /\b(mountain|mountains|hill|hills|himalaya|himalayas|valley|valleys)\b/i,
+    "Castles": /\b(castle|castles|fort|forts|palace|palaces)\b/i,
+    "Amazing Pools": /\b(pool|pools|swimming|swimming pool|infinity pool)\b/i,
+    "Camping": /\b(camping|camp|campsite|tent|tents|glamping)\b/i,
+    "Farms": /\b(farm|farms|farmhouse|farmstay|countryside|barn)\b/i,
+    "Arctic": /\b(arctic|igloo|igloos|snow|ice|polar|tundra)\b/i,
+    "Domes": /\b(dome|domes|geodesic dome|bubble house)\b/i
 };
 
+const allowedCategories = Object.keys(categoryKeywords);
 
-
-
-//index route
-router.get("/",wrapAsync(async(req,res)=>{
-    const alllistings=await listing.find({});
-    res.render("listings/index.ejs",{alllistings});
-
-}));
-//new route
-router.get("/new",(req,res)=>{
-    res.render("listings/new.ejs");
-})
-//create route
-router.post("/",validateListing,wrapAsync(async(req,res,next)=>{
-    //let{title,description,image,country,price,location}=req.body;
-    const newlistings=new listing(req.body.listing);
-    console.log(newlistings);
-    await newlistings.save();
-    req.flash("success","new listing created !");
-    res.redirect("/listings");
-
-    
-
-}));
-
-
-// edit route
-router.get("/:id/edit", wrapAsync(async (req, res) => {
-    let { id } = req.params;
-    const listings = await listing.findById(id);
-    req.flash("success"," listing updated !");
-    if(!listing){
-        req.flash("error","Listing you requested for does not exist!");
-        res.redirect("/listings");
-    }
-    res.render("listings/edit.ejs", { listings });
-}));
-
-//update route
-router.put("/:id", validateListing, wrapAsync(async (req, res) => {
-    let { id } = req.params;
-
-    await listing.findByIdAndUpdate(
-        id,
-        { ...req.body.listing },
-        { runValidators: true }
+// NEW: Show listings for a selected category
+router.get("/category/:category", wrapAsync(async (req, res) => {
+    const category = allowedCategories.find(
+        item => item.toLowerCase() === req.params.category.toLowerCase()
     );
-    req.flash("success","listing updated !");
 
-    res.redirect(`/listings/${id}`);
-}));
-
-//delete route
-router.delete("/:id",wrapAsync(async (req,res)=>{
-    let{id}=req.params;
-    let deletedlisting=await listing.findByIdAndDelete(id);
-    console.log(deletedlisting);
-    req.flash("success","listing deleted !");
-    res.redirect("/listings");
-}));
-
-//show route
-router.get("/:id",wrapAsync(async (req,res)=>{
-    let{id}=req.params;
-    const listings=await listing.findById(id).populate("reviews");
-    if(!listing){
-        req.flash("error","Listing you requested for does not exist!");
-        res.redirect("/listings");
+    if (!category) {
+        return res.status(404).send("Category not found");
     }
-    res.render("listings/show.ejs",{listings});
 
+    let alllistings;
+
+    if (category === "Trending") {
+        // Show explicitly categorized Trending listings
+        alllistings = await Listing.find({ category: "Trending" });
+    } else {
+        const keywordRegex = categoryKeywords[category];
+
+        // Match the saved category OR relevant listing text.
+        // This also helps with older listings that have no category.
+        alllistings = await Listing.find({
+            $or: [
+                { category: category },
+                { title: keywordRegex },
+                { description: keywordRegex },
+                { location: keywordRegex },
+                { country: keywordRegex }
+            ]
+        });
+    }
+
+    res.render("listings/index.ejs", {
+        alllistings,
+        searchQuery: "",
+        activeCategory: category
+    });
 }));
 
+// New listing form
+router.get("/new", isLoggedIn, listingController.renderNewForm);
 
-module.exports=router;
+// Existing listing routes — preserved
+router.route("/:id")
+    .put(
+        isLoggedIn,
+        isOwner,
+        upload.single("listing[image][url]"),
+        validateListing,
+        wrapAsync(listingController.updateListing)
+    )
+    .delete(
+        isLoggedIn,
+        isOwner,
+        wrapAsync(listingController.destroyListing)
+    )
+    .get(wrapAsync(listingController.showListing));
+
+// Edit listing form
+router.get(
+    "/:id/edit",
+    isLoggedIn,
+    isOwner,
+    wrapAsync(listingController.renderEditForm)
+);
+
+module.exports = router;
+
